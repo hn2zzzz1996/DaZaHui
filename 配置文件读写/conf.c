@@ -36,17 +36,18 @@ conf_t *new_conf() {
 
 // 去除前后的空格
 char *trim_space(char *str) {
+    // 为什么要复制一遍？如果str是常量字符串，会出错的
     char *tmp = Malloc(strlen(str) + 1);
     memcpy(tmp, str, strlen(str) + 1);
     str = tmp;
 
     int len = strlen(str);
     char *head = str, *tail = str + len - 1;
-    while(*head == ' ' || *head == '\t') {
+    // 记得判断换行符
+    while(*head == ' ' || *head == '\t' || *head == '\n') {
         head++;
     }
     if(head - str == len) {
-        printf("NULL\n");
         return NULL;
     }
 
@@ -55,7 +56,7 @@ char *trim_space(char *str) {
     }
     *(tail+1) = '\0';
 
-    memcpy(str, head, tail-head+1);
+    memcpy(str, head, tail-head+1+1);
     return str;
 }
 
@@ -216,8 +217,8 @@ int main() {
     conf_t *conf = open_conf_file("test.conf");
     printf("get_conf: \"%s\"\n", get_conf(conf, "a a"));
     printf("get_conf: \"%s\"\n", get_conf(conf, "tommorow this is a    good"));
-    //del_conf(conf, "hsq");
-    //set_conf(conf, "sss", "789 100");
+    del_conf(conf, "hsq");
+    set_conf(conf, "sss", "789 100");
     save_conf_file(conf, "abc.conf");
 
     printf("All is ok!\n");
