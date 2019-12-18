@@ -5,12 +5,12 @@
 typedef struct entry_t {
     char *key;
     char *value;
+    struct entry_t *next;
 } entry_t;
 
 typedef struct conf_t {
-    int capacity;
     int size;
-    entry_t **entry;
+    entry_t *entry_head;
 } conf_t;
 
 void errExit(const char *msg) {
@@ -28,9 +28,8 @@ void *Malloc(int size) {
 
 conf_t *new_conf() {
     conf_t *conf = Malloc(sizeof(*conf));
-    conf->capacity = 8;
     conf->size = 0;
-    conf->entry = Malloc(sizeof(*conf->entry) * conf->capacity);
+    conf->entry_head = NULL;
 
     return conf;
 }
@@ -54,6 +53,29 @@ char *trim_space(char *str) {
     return head;
 }
 
+entry_t *find_entry(conf_t *conf, char *key) {
+    entry_t *entry = conf->entry_head;
+    while(entry) {
+        if(strcmp(entry->key, key) == 0) {
+            return entry;
+        }
+        entry = entry->next;
+    }
+    
+    return NULL;
+}
+
+void new_entry(conf_t *conf, char *key, char *value) {
+    entry_t *entry = Malloc(sizeof(*entry));
+    entry->key = Malloc(strlen(key)+1);
+    entry->value = Malloc(strlen(value)+1);
+    memcpy(entry->key, key, strlen(key)+1);
+    memcpy(entry->value, value, sizeof(value)+1);
+    
+    entry->next = conf->entry_head;
+    conf->entry_head = entry;
+}
+
 int set_conf(conf_t *conf, char *key, char *value) {
     key = trim_space(key);
     value = trim_space(value);
@@ -63,22 +85,19 @@ int set_conf(conf_t *conf, char *key, char *value) {
         fprintf(stderr, "key or value is null\n");
     }
 
-    entry_t *entry = Malloc(sizeof(*entry));
-    entry->key = Malloc(strlen(key)+1);
-    entry->value = Malloc(strlen(value)+1);
-    memcpy(entry->key, key, strlen(key)+1);
-    memcpy(entry->value, value, sizeof(value)+1);
-    
-    conf->entry[conf->size++] = entry;
-}
-char* get_conf(conf_t *conf, char *key) {
-    int i;
-    entry_t **entry = conf->entry;
-    for(i = 0; i < conf->size; i++) {
-        if(strcmp(entry[i]->key, key) == 0) {
-            return entry[i]->value;
-        }
+    entry_t *entry = find_entry(conf, key);
+    if(entry == NULL) {
+        new_entry(conf, key, value);
+    } else {
+        entry->value = value;
     }
+}
+
+char* get_conf(conf_t *conf, char *key) {
+    entry_t *entry = find_entry(conf, key);
+    if(entry != NULL) {
+        return entry->value;
+    } 
     return NULL;
 }
 
@@ -135,12 +154,25 @@ conf_t* open_conf_file(const char *filename) {
         }
     }
 
+    fclose(fp);
     return conf;
+}
+
+void save_conf_file(conf_t *conf, const char *name) {
+    FILE *fp = fopen(name, "w");
+    entry_t *head = conf->entry_head;
+    while(head) {
+        fprintf(fp, "%s = %s\n", head->key, head->value);
+        head = head->next;
+    }
+    fclose(fp);
 }
 
 int main() {
     conf_t *conf = open_conf_file("test.conf");
-    printf("get_conf: \"%s\"\n", get_conf(conf, "hsq"));
+    //printf("get_conf: \"%s\"\n", get_conf(conf, "hsq"));
     printf("get_conf: \"%s\"\n", get_conf(conf, "a a"));
-    printf("get_conf: \"%s\"\n", get_conf(conf, "aaaa"));
+    //printf("get_conf: \"%s\"\n", get_conf(conf, "aaaa"));
+    //printf("get_conf: \"%s\"\n", get_conf(conf, "bbbb"));
+    //save_conf_file(conf, "abc.conf");
 }
