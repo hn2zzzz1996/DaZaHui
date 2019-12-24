@@ -14,6 +14,7 @@ typedef struct RE {
     int ch;
     char *cc1;
     int ncc1;
+    struct RE *next;
 } RE;
 
 void *Malloc(int size) {
@@ -40,28 +41,90 @@ RE *new_re(RETYPE type, int ch, char *cc1, int ncc1) {
 }
 
 #define RE_CHAR(ch)     (new_re(CHAR, (ch), NULL, 0))
-#define RE_STAR         (new_re(STAR, '*', NULL, 0))
-#define RE_POINT        (new_re(POINT, '.', NULL, 0))
+#define RE_STAR()         (new_re(STAR, '*', NULL, 0))
+#define RE_POINT()        (new_re(POINT, '.', NULL, 0))
+
+RE *RE_STR(char *cc) {
+    printf("%s\n", cc);
+}
+
+RE *reverse_list(RE *head) {
+    RE *reverse = NULL, *tmp;
+    while(head) {
+        tmp = head->next;
+        head->next = reverse;
+        reverse = head;
+        head = tmp;
+    }
+    return reverse;
+}
 
 RE *compile(char *reg) {
     char *p;
-    RE *new_reg = (RE*)Malloc(sizeof(*new_reg) * (strlen(reg) + 1));
     int i = 0;
+    RE *head = NULL;
+    int cnt[257];
     for (p = reg; *p; p++) {
+        RE *node;
         if (*p == '*') {
-            
+            node = RE_STAR();
         } else if (*p == '.') {
-
+            node = RE_POINT();
+        } else if (*p == '[') {
+            memset(cnt, 0, sizeof(cnt));
+            p++;
+            while(*p != ']') {
+                if (*p == '-') {
+                    for (i = *(p-1); i <= *(p+1); i++) {
+                        cnt[i] = 1;
+                    }
+                    p++;
+                } else {
+                    cnt[*p] = 1;
+                }
+                p++;
+            }
+            
+            char cc[256];
+            int k = 0;
+            for (i = 0; i < 257; i++) {
+                if (cnt[i]) {
+                    cc[k++] = i;
+                }
+            }
+            cc[k] = '\0';
+            node = RE_STR(cc);
         } else {
-
+            node = RE_CHAR(*p);
         }
+        node->next = head;
+        head = node;
     }
+    head = reverse_list(head);
+    return head;
 }
 
 void print_re(RE *reg) {
-
+    RE *node = reg;
+    while (node) {
+        switch (node->type)
+        {
+            case CHAR:
+                printf("%c", node->ch);
+                break;
+            case STAR:
+                printf("*");
+                break;
+            case POINT:
+                printf(".");
+                break;
+        }
+        node = node->next;
+    }
 }
 
 int main() {
-    RE *reg = compile("a*");
+    //RE *reg = compile("a*.*bcd");
+    RE *reg = compile("[a-d]");
+    print_re(reg);
 }
