@@ -43,10 +43,7 @@ RE *new_re(RETYPE type, int ch, char *cc1, int ncc1) {
 #define RE_CHAR(ch)     (new_re(CHAR, (ch), NULL, 0))
 #define RE_STAR()         (new_re(STAR, '*', NULL, 0))
 #define RE_POINT()        (new_re(POINT, '.', NULL, 0))
-
-RE *RE_STR(char *cc) {
-    printf("%s\n", cc);
-}
+#define RE_STR(cc)        (new_re(STR, 's', cc, 0))
 
 RE *reverse_list(RE *head) {
     RE *reverse = NULL, *tmp;
@@ -112,6 +109,9 @@ void print_re(RE *reg) {
             case CHAR:
                 printf("%c", node->ch);
                 break;
+            case STR:
+                printf("[%s]", node->cc1);
+                break;
             case STAR:
                 printf("*");
                 break;
@@ -125,6 +125,6 @@ void print_re(RE *reg) {
 
 int main() {
     //RE *reg = compile("a*.*bcd");
-    RE *reg = compile("[a-d]");
+    RE *reg = compile("[ad]");
     print_re(reg);
 }
